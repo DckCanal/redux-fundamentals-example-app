@@ -1,40 +1,28 @@
-export default function appReducer(state = initialState, action) {
-  switch (action.type) {
-    case 'todos/todoAdded': {
-      return {
-        ...state,
-        todos: [
-          ...state.todos,
-          {
-            id: nextTodoId(state.todos),
-            text: action.payload,
-            completed: false,
-          },
-        ],
-      };
-    }
-    case 'todos/todoToggled': {
-      return {
-        ...state,
-        todos: state.todos.map((todo) => {
-          if (todo.id !== action.payload) return todo;
-          return {
-            ...todo,
-            completed: !todo.completed,
-          };
-        }),
-      };
-    }
-    case 'filters/statusFilterChanged': {
-      return {
-        ...state,
-        filters: {
-          ...state.filters,
-          status: action.payload,
-        },
-      };
-    }
-    default:
-      return state;
-  }
-}
+import { combineReducers } from 'redux';
+
+import todosReducer from './features/todos/todosSlice';
+import filtersReducer from './features/filters/filtersSlice';
+
+// export default function appReducer(state = {}, action) {
+//   return {
+//     todos: todosReducer(state.todos, action),
+//     filters: filtersReducer(state.filters, action),
+//   };
+// }
+
+/*
+  combineReducers accepts an object where the key names will
+  become the keys in your root state object, and the values are
+  the slice reducer functions that know how to update those
+  slices of the Redux state.
+
+  Remember, the key names you give to combineReducers decides
+  what the key names of your state object will be!
+*/
+
+const rootReducer = combineReducers({
+  todos: todosReducer,
+  filters: filtersReducer,
+});
+
+export default rootReducer;
