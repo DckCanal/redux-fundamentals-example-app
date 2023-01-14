@@ -3,11 +3,8 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import { availableColors, capitalize } from '../filters/colors';
 import { StatusFilters, colorFilterChanged } from '../filters/filtersSlice';
+import { selectTotalCompletedTodos } from '../todos/todosSlice';
 
-const selectTotalCompletedTodos = (state) => {
-  const completedTodos = state.todos.filter((todo) => !todo.completed);
-  return completedTodos.length;
-};
 const selectFilters = (state) => state.filters;
 
 const RemainingTodos = ({ count }) => {
