@@ -1,4 +1,5 @@
 import { createStore, compose, applyMiddleware } from 'redux';
+import thunkMiddleware from 'redux-thunk';
 import rootReducer from './reducer';
 import {
   print1,
@@ -35,8 +36,6 @@ if (persistedTodosString) {
 // );
 // const store = createStore(rootReducer, middlewareEnhancer);
 
-const composedEnhancer = composeWithDevTools(
-  applyMiddleware(delayedMessageMiddleware)
-);
+const composedEnhancer = composeWithDevTools(applyMiddleware(thunkMiddleware));
 const store = createStore(rootReducer, composedEnhancer);
 export default store;

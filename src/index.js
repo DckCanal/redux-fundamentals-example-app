@@ -6,6 +6,9 @@ import store from './store';
 import { Provider } from 'react-redux';
 
 import './api/server';
+import { fetchTodos } from './features/todos/todosSlice';
+
+store.dispatch(fetchTodos());
 
 // console.log('Initial state: ', store.getState());
 // const unsubscribe = store.subscribe(() =>

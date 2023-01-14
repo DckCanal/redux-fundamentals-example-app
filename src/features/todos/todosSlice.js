@@ -1,3 +1,5 @@
+import { client } from '../../api/client';
+
 // const initialState = [
 //   { id: 0, text: 'Learn React', completed: true },
 //   { id: 1, text: 'Learn Redux', completed: false, color: 'purple' },
@@ -15,11 +17,12 @@ export default function todosReducer(state = initialState, action) {
     case 'todos/todoAdded': {
       return [
         ...state,
-        {
-          id: nextTodoId(state),
-          text: action.payload,
-          completed: false,
-        },
+        // {
+        //   id: nextTodoId(state),
+        //   text: action.payload,
+        //   completed: false,
+        // },
+        action.payload,
       ];
     }
     case 'todos/todoToggled': {
@@ -48,7 +51,35 @@ export default function todosReducer(state = initialState, action) {
     case 'todos/completedCleared': {
       return state.filter((todo) => !todo.completed);
     }
+    case 'todos/todosLoaded': {
+      return action.payload;
+    }
     default:
       return state;
   }
+}
+
+export const todosLoaded = (todos) => ({
+  type: 'todos/todosLoaded',
+  payload: todos,
+});
+
+export const todoAdded = (todo) => ({
+  type: 'todos/todoAdded',
+  payload: todo,
+});
+
+export function fetchTodos() {
+  return async function (dispatch, getState) {
+    const response = await client.get('/fakeApi/todos');
+    dispatch(todosLoaded(response.todos));
+  };
+}
+
+export function saveNewTodo(text) {
+  return async function saveNewTodoThunk(dispatch, getState) {
+    const initialTodo = { text };
+    const response = await client.post('/fakeApi/todos', { todo: initialTodo });
+    dispatch(todoAdded(response.todo));
+  };
 }
