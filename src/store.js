@@ -1,6 +1,20 @@
-import { createStore, applyMiddleware } from 'redux';
-import thunkMiddleware from 'redux-thunk';
-import rootReducer from './reducer';
+import { configureStore } from '@reduxjs/toolkit';
+
+import todosReducer from './features/todos/todosSlice';
+import filtersReducer from './features/filters/filtersSlice';
+
+const store = configureStore({
+  reducer: {
+    todos: todosReducer,
+    filters: filtersReducer,
+  },
+});
+
+export default store;
+
+// import { createStore, applyMiddleware } from 'redux';
+// import thunkMiddleware from 'redux-thunk';
+// import rootReducer from './reducer';
 // import {
 //   print1,
 //   print2,
@@ -8,7 +22,7 @@ import rootReducer from './reducer';
 //   loggerMiddleware,
 //   delayedMessageMiddleware,
 // } from './exampleAddons/middleware';
-import { composeWithDevTools } from 'redux-devtools-extension';
+// import { composeWithDevTools } from 'redux-devtools-extension';
 // import {
 //   sayHiOnDispatch,
 //   includeMeaningOfLife,
@@ -36,6 +50,6 @@ import { composeWithDevTools } from 'redux-devtools-extension';
 // );
 // const store = createStore(rootReducer, middlewareEnhancer);
 
-const composedEnhancer = composeWithDevTools(applyMiddleware(thunkMiddleware));
-const store = createStore(rootReducer, composedEnhancer);
-export default store;
+// const composedEnhancer = composeWithDevTools(applyMiddleware(thunkMiddleware));
+// const store = createStore(rootReducer, composedEnhancer);
+// export default store;

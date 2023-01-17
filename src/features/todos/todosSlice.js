@@ -1,185 +1,85 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { client } from '../../api/client';
-import { createSelector } from 'reselect';
-import { StatusFilters } from '../filters/filtersSlice';
 
-// const initialState = [
-//   { id: 0, text: 'Learn React', completed: true },
-//   { id: 1, text: 'Learn Redux', completed: false, color: 'purple' },
-//   { id: 2, text: 'Build something fun!', completed: false, color: 'blue' },
-// ];
 const initialState = {
-  status: 'idle',
   entities: {},
+  status: 'idle',
 };
 
-// function nextTodoId(todos) {
-//   const maxId = todos.reduce((maxId, todo) => Math.max(todo.id, maxId), -1);
-//   return maxId + 1;
-// }
+export const fetchTodos = createAsyncThunk('todos/fetchTodos', async () => {
+  const response = await client.get('/fakeApi/todos');
+  return response.todos;
+});
 
-// REDUCER
-export default function todosReducer(state = initialState, action) {
-  switch (action.type) {
-    case 'todos/todoAdded': {
+export const saveNewTodo = createAsyncThunk(
+  'todos/saveNewTodo',
+  async (text) => {
+    const response = await client.post('/fakeApi/todos', { todo: text });
+    return response.todo;
+  }
+);
+
+const todosSlice = createSlice({
+  name: 'todos',
+  initialState,
+  reducers: {
+    todoAdded(state, action) {
       const todo = action.payload;
-      return {
-        ...state,
-        entities: {
-          ...state.entities,
-          [todo.id]: todo,
-        },
-      };
-    }
-    case 'todos/todoToggled': {
-      const todoId = action.payload;
-      const todo = state.entities[todoId];
-      return {
-        ...state,
-        entities: {
-          ...state.entities,
-          [todoId]: {
-            ...todo,
-            completed: !todo.completed,
-          },
-        },
-      };
-    }
-
-    case 'todos/colorSelected': {
-      const todoId = action.payload.todoId;
-      const todo = state.entities[todoId];
-      const color = action.payload.color;
-      return {
-        ...state,
-        entities: {
-          ...state.entities,
-          [todoId]: {
-            ...todo,
+      state.entities[todo.id] = todo;
+    },
+    todoToggled(state, action) {
+      const todo = state.entities[action.payload];
+      todo.completed = !todo.completed;
+    },
+    todoColorSelected: {
+      reducer(state, action) {
+        const { color, todoId } = action.payload;
+        state.entities[todoId].color = color;
+      },
+      prepare(todoId, color) {
+        return {
+          payload: {
+            todoId,
             color,
           },
-        },
-      };
-    }
-    case 'todos/todoDeleted': {
-      const todoId = action.payload;
-      const newEntities = { ...state.entities };
-      delete newEntities[todoId];
-      return {
-        ...state,
-        entities: newEntities,
-      };
-    }
-    case 'todos/allCompleted': {
-      const newEntities = { ...state.entities };
-      Object.values(newEntities).forEach((todo) => {
-        newEntities[todo.id] = {
-          ...todo,
-          completed: true,
         };
-      });
-      return {
-        ...state,
-        entities: newEntities,
-      };
-    }
-    case 'todos/completedCleared': {
-      const newEntities = { ...state.entities };
-      Object.values(newEntities).forEach((todo) => {
-        if (todo.completed) delete newEntities[todo.id];
-      });
-      return {
-        ...state,
-        entities: newEntities,
-      };
-    }
-    case 'todos/todosLoaded': {
-      const newEntities = {};
-      action.payload.forEach((todo) => {
-        newEntities[todo.id] = todo;
-      });
-      return {
-        ...state,
-        status: 'idle',
-        entities: action.payload,
-      };
-    }
-    case 'todos/todosLoading': {
-      return {
-        ...state,
-        status: 'loading',
-      };
-    }
-    default:
-      return state;
-  }
-}
-
-// ACTION CREATORS
-export const todosLoading = () => ({
-  type: 'todos/todosLoading',
+      },
+    },
+    todoDeleted(state, action) {
+      delete state.entities[action.payload];
+    },
+    allCompleted(state, action) {
+      Object.values(state.entities).forEach((todo) => (todo.completed = true));
+    },
+    completedCleared(state, action) {
+      state.entities = state.entities.filter((todo) => !todo.completed);
+    },
+    todosLoaded(state, action) {
+      state.entities = action.payload;
+      state.status = 'idle';
+    },
+    todosLoading(state, action) {
+      state.status = 'loading';
+    },
+    extraReducer: (builder) => {
+      builder
+        .addCase(fetchTodos.pending, (state, action) => {
+          state.status = 'loading';
+        })
+        .addCase(fetchTodos.fulfilled, (state, action) => {
+          const newEntities = {};
+          action.payload.forEach((todo) => {
+            newEntities[todo.id] = todo;
+          });
+          state.entities = newEntities;
+          state.status = 'idle';
+        })
+        .addCase(saveNewTodo.fulfilled, (state, action) => {
+          state.entities[action.payload.id] = action.payload;
+        });
+    },
+  },
 });
 
-export const todosLoaded = (todos) => ({
-  type: 'todos/todosLoaded',
-  payload: todos,
-});
-
-export const todoAdded = (todo) => ({
-  type: 'todos/todoAdded',
-  payload: todo,
-});
-
-// THUNK CREATORS
-export function fetchTodos() {
-  return async function (dispatch, _getState) {
-    dispatch(todosLoading());
-    const response = await client.get('/fakeApi/todos');
-    dispatch(todosLoaded(response.todos));
-  };
-}
-
-export function saveNewTodo(text) {
-  return async function saveNewTodoThunk(dispatch, _getState) {
-    const initialTodo = { text };
-    const response = await client.post('/fakeApi/todos', { todo: initialTodo });
-    dispatch(todoAdded(response.todo));
-  };
-}
-// SELECTORS
-export const selectTodoEntities = (state) => state.todos.entities;
-export const selectStatus = (state) => state.todos.status;
-export const selectTodos = createSelector(selectTodoEntities, (entities) =>
-  Object.values(entities)
-);
-export const selectTodoById = (todoId) => (state) =>
-  selectTodoEntities(state)[todoId];
-
-// MEMOIZED SELECTORS
-export const selectTodoIds = createSelector(selectTodos, (todos) =>
-  todos.map((todo) => todo.id)
-);
-
-export const selectFilteredTodos = createSelector(
-  selectTodos,
-  (state) => state.filters,
-  (todos, filters) => {
-    const { colors, status } = filters;
-    if (status === StatusFilters.All && colors.length === 0) return todos;
-    const completedStatus = status === StatusFilters.Completed;
-    return todos.filter((todo) => {
-      const statusMatches =
-        todo.completed === completedStatus || status === StatusFilters.All;
-      const colorMatches = colors.includes(todo.color) || colors.length === 0;
-      return statusMatches && colorMatches;
-    });
-  }
-);
-
-export const selectFilteredTodoIds = createSelector(
-  selectFilteredTodos,
-  (filteredTodos) => filteredTodos.map((todo) => todo.id)
-);
-
-export const selectTotalCompletedTodos = (state) => {
-  return selectTodos(state).filter((todo) => !todo.completed).length;
-};
+export const { todoAdded, todoToggled, todosLoading } = todosSlice.actions;
+export default todosSlice.reducer;
